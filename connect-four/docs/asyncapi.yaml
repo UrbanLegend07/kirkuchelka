@@ -1,0 +1,345 @@
+# AsyncAPI description of the Connect Four game server WebSocket.
+# Human-readable version with examples and rules: messages.md
+# Operations are written from the SERVER's point of view:
+#   receive = browser -> server, send = server -> browser.
+asyncapi: 3.0.0
+
+info:
+  title: Connect Four Online — game WebSocket
+  version: 0.1.0
+  description: |
+    Real-time WebSocket API of the Connect Four game server: login, matchmaking queue,
+    game moves, heartbeat and reconnect. Every message is JSON `{ "type": "...", "payload": { ... } }`.
+
+servers:
+  local:
+    host: localhost:3000
+    pathname: /ws
+    protocol: ws
+    description: Local development server
+
+channels:
+  game:
+    address: /ws
+    description: The single WebSocket connection of one player.
+    messages:
+      auth: { $ref: '#/components/messages/auth' }
+      queueJoin: { $ref: '#/components/messages/queueJoin' }
+      queueLeave: { $ref: '#/components/messages/queueLeave' }
+      gameMove: { $ref: '#/components/messages/gameMove' }
+      pong: { $ref: '#/components/messages/pong' }
+      authOk: { $ref: '#/components/messages/authOk' }
+      ping: { $ref: '#/components/messages/ping' }
+      queueStatus: { $ref: '#/components/messages/queueStatus' }
+      matchFound: { $ref: '#/components/messages/matchFound' }
+      gameState: { $ref: '#/components/messages/gameState' }
+      gameOver: { $ref: '#/components/messages/gameOver' }
+      error: { $ref: '#/components/messages/error' }
+
+operations:
+  receiveClientMessages:
+    action: receive
+    channel: { $ref: '#/channels/game' }
+    summary: Messages the browser sends to the server.
+    messages:
+      - $ref: '#/channels/game/messages/auth'
+      - $ref: '#/channels/game/messages/queueJoin'
+      - $ref: '#/channels/game/messages/queueLeave'
+      - $ref: '#/channels/game/messages/gameMove'
+      - $ref: '#/channels/game/messages/pong'
+  sendServerMessages:
+    action: send
+    channel: { $ref: '#/channels/game' }
+    summary: Messages the server sends to the browser.
+    messages:
+      - $ref: '#/channels/game/messages/authOk'
+      - $ref: '#/channels/game/messages/ping'
+      - $ref: '#/channels/game/messages/queueStatus'
+      - $ref: '#/channels/game/messages/matchFound'
+      - $ref: '#/channels/game/messages/gameState'
+      - $ref: '#/channels/game/messages/gameOver'
+      - $ref: '#/channels/game/messages/error'
+
+components:
+  messages:
+    # ----- browser -> server -----
+    auth:
+      name: auth
+      summary: First message of every connection. Log in with a name or a reconnect token (exactly one).
+      payload:
+        $ref: '#/components/schemas/AuthMessage'
+      examples:
+        - name: newPlayer
+          payload: { type: auth, payload: { name: lukas } }
+        - name: reconnect
+          payload: { type: auth, payload: { reconnectToken: rt_5b1c9e } }
+    queueJoin:
+      name: queue.join
+      summary: Join the matchmaking queue (player must be IDLE).
+      payload: { $ref: '#/components/schemas/EmptyMessage' }
+      examples:
+        - payload: { type: queue.join }
+    queueLeave:
+      name: queue.leave
+      summary: Leave the matchmaking queue (player must be QUEUED).
+      payload: { $ref: '#/components/schemas/EmptyMessage' }
+      examples:
+        - payload: { type: queue.leave }
+    gameMove:
+      name: game.move
+      summary: Drop a disc into a column.
+      payload: { $ref: '#/components/schemas/GameMoveMessage' }
+      examples:
+        - payload: { type: game.move, payload: { matchId: m_8f3a, column: 3 } }
+    pong:
+      name: pong
+      summary: Answer to ping.
+      payload: { $ref: '#/components/schemas/EmptyMessage' }
+      examples:
+        - payload: { type: pong }
+
+    # ----- server -> browser -----
+    authOk:
+      name: auth.ok
+      summary: Login succeeded. If activeMatchId is set, a game.state follows.
+      payload: { $ref: '#/components/schemas/AuthOkMessage' }
+      examples:
+        - payload:
+            type: auth.ok
+            payload: { playerId: lukas, name: lukas, rating: 1032, ratingSource: PARTNER, reconnectToken: rt_5b1c9e, activeMatchId: null }
+    ping:
+      name: ping
+      summary: Heartbeat every 15 s. Without a pong within 30 s the player is marked disconnected.
+      payload: { $ref: '#/components/schemas/EmptyMessage' }
+      examples:
+        - payload: { type: ping }
+    queueStatus:
+      name: queue.status
+      summary: Queue state; sent on join/leave and every second while waiting.
+      payload: { $ref: '#/components/schemas/QueueStatusMessage' }
+      examples:
+        - payload:
+            type: queue.status
+            payload: { state: QUEUED, waitingSeconds: 7, yourRating: 1032, ratingRange: { min: 792, max: 1272 }, playersInQueue: 3 }
+    matchFound:
+      name: match.found
+      summary: An opponent was found; a game.state follows.
+      payload: { $ref: '#/components/schemas/MatchFoundMessage' }
+      examples:
+        - payload:
+            type: match.found
+            payload: { matchId: m_8f3a, opponent: { playerId: richard, name: richard, rating: 1010 }, yourColor: RED, youStart: true }
+    gameState:
+      name: game.state
+      summary: Full game state, personal for each player.
+      payload: { $ref: '#/components/schemas/GameStateMessage' }
+    gameOver:
+      name: game.over
+      summary: The game ended; the player is IDLE again.
+      payload: { $ref: '#/components/schemas/GameOverMessage' }
+    error:
+      name: error
+      summary: A request was rejected; the connection stays open.
+      payload: { $ref: '#/components/schemas/ErrorMessage' }
+      examples:
+        - payload: { type: error, payload: { code: COLUMN_FULL, message: 'This column is full, choose another one.', relatesTo: game.move } }
+
+  schemas:
+    EmptyMessage:
+      type: object
+      required: [type]
+      properties:
+        type: { type: string }
+        payload: { type: object, additionalProperties: false }
+
+    AuthMessage:
+      type: object
+      required: [type, payload]
+      properties:
+        type: { const: auth }
+        payload:
+          oneOf:
+            - type: object
+              required: [name]
+              additionalProperties: false
+              properties:
+                name: { type: string, pattern: '^[A-Za-z0-9_-]{3,20}$' }
+            - type: object
+              required: [reconnectToken]
+              additionalProperties: false
+              properties:
+                reconnectToken: { type: string, minLength: 1 }
+
+    GameMoveMessage:
+      type: object
+      required: [type, payload]
+      properties:
+        type: { const: game.move }
+        payload:
+          type: object
+          required: [matchId, column]
+          properties:
+            matchId: { type: string, minLength: 1 }
+            column: { type: integer, minimum: 0, maximum: 6 }
+
+    AuthOkMessage:
+      type: object
+      required: [type, payload]
+      properties:
+        type: { const: auth.ok }
+        payload:
+          type: object
+          required: [playerId, name, rating, ratingSource, reconnectToken, activeMatchId]
+          properties:
+            playerId: { type: string }
+            name: { type: string }
+            rating: { type: integer }
+            ratingSource: { type: string, enum: [PARTNER, CACHE, DEFAULT] }
+            reconnectToken: { type: string }
+            activeMatchId: { type: [string, 'null'] }
+
+    QueueStatusMessage:
+      type: object
+      required: [type, payload]
+      properties:
+        type: { const: queue.status }
+        payload:
+          type: object
+          required: [state, waitingSeconds]
+          properties:
+            state: { type: string, enum: [QUEUED, IDLE] }
+            waitingSeconds: { type: integer, minimum: 0 }
+            yourRating: { type: integer }
+            ratingRange:
+              type: object
+              properties:
+                min: { type: integer }
+                max: { type: integer }
+            playersInQueue: { type: integer, minimum: 0 }
+
+    MatchFoundMessage:
+      type: object
+      required: [type, payload]
+      properties:
+        type: { const: match.found }
+        payload:
+          type: object
+          required: [matchId, opponent, yourColor, youStart]
+          properties:
+            matchId: { type: string }
+            opponent:
+              type: object
+              required: [playerId, name, rating]
+              properties:
+                playerId: { type: string }
+                name: { type: string }
+                rating: { type: integer }
+            yourColor: { $ref: '#/components/schemas/DiscColor' }
+            youStart: { type: boolean }
+
+    GameStateMessage:
+      type: object
+      required: [type, payload]
+      properties:
+        type: { const: game.state }
+        payload:
+          type: object
+          required: [matchId, board, yourColor, currentPlayerId, isYourTurn, lastMove, moveNumber, turnDeadline, opponentConnected]
+          properties:
+            matchId: { type: string }
+            board: { $ref: '#/components/schemas/Board' }
+            yourColor: { $ref: '#/components/schemas/DiscColor' }
+            currentPlayerId: { type: [string, 'null'] }
+            isYourTurn: { type: boolean }
+            lastMove:
+              oneOf:
+                - type: 'null'
+                - $ref: '#/components/schemas/Move'
+            moveNumber: { type: integer, minimum: 0, maximum: 42 }
+            turnDeadline: { type: [string, 'null'], format: date-time }
+            opponentConnected: { type: boolean }
+
+    GameOverMessage:
+      type: object
+      required: [type, payload]
+      properties:
+        type: { const: game.over }
+        payload:
+          type: object
+          required: [matchId, result, reason, winnerId, opponentId, winningCells, board]
+          properties:
+            matchId: { type: string }
+            result: { type: string, enum: [WIN, LOSS, DRAW] }
+            reason: { type: string, enum: [FOUR_IN_A_ROW, BOARD_FULL, TIMEOUT, DISCONNECT, RESIGN] }
+            winnerId: { type: [string, 'null'] }
+            opponentId: { type: string }
+            winningCells:
+              type: array
+              items: { $ref: '#/components/schemas/Cell' }
+            board: { $ref: '#/components/schemas/Board' }
+
+    ErrorMessage:
+      type: object
+      required: [type, payload]
+      properties:
+        type: { const: error }
+        payload:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - INVALID_JSON
+                - INVALID_MESSAGE
+                - UNKNOWN_MESSAGE_TYPE
+                - NOT_AUTHENTICATED
+                - ALREADY_AUTHENTICATED
+                - INVALID_NAME
+                - NAME_TAKEN
+                - INVALID_RECONNECT_TOKEN
+                - ALREADY_IN_QUEUE
+                - NOT_IN_QUEUE
+                - ALREADY_IN_GAME
+                - MATCH_NOT_FOUND
+                - NOT_YOUR_TURN
+                - COLUMN_OUT_OF_RANGE
+                - COLUMN_FULL
+                - INVALID_MOVE_FORMAT
+                - GAME_ALREADY_FINISHED
+            message: { type: string, description: Human-readable explanation, can be shown to the player. }
+            relatesTo: { type: [string, 'null'], description: Type of the rejected message. }
+
+    DiscColor:
+      type: string
+      enum: [RED, YELLOW]
+
+    Board:
+      description: 6 rows x 7 columns, board[row][column], row 0 is the top row.
+      type: array
+      minItems: 6
+      maxItems: 6
+      items:
+        type: array
+        minItems: 7
+        maxItems: 7
+        items:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/DiscColor'
+
+    Cell:
+      type: object
+      required: [row, column]
+      properties:
+        row: { type: integer, minimum: 0, maximum: 5 }
+        column: { type: integer, minimum: 0, maximum: 6 }
+
+    Move:
+      type: object
+      required: [playerId, color, row, column]
+      properties:
+        playerId: { type: string }
+        color: { $ref: '#/components/schemas/DiscColor' }
+        row: { type: integer, minimum: 0, maximum: 5 }
+        column: { type: integer, minimum: 0, maximum: 6 }

@@ -1,0 +1,238 @@
+/* Connect Four Online — styles.
+   Colors are defined once as variables at the top. */
+
+:root {
+  --background: #0f1729;
+  --surface: #18233d;
+  --surface-border: #26345a;
+  --text: #e8edf7;
+  --text-muted: #93a1c2;
+  --accent: #4f8cff;
+  --board-blue: #1f4fd1;
+  --board-blue-dark: #183ea6;
+  --hole: #0b1222;
+  --disc-red: #ef4444;
+  --disc-red-dark: #b91c1c;
+  --disc-yellow: #facc15;
+  --disc-yellow-dark: #ca8a04;
+  --success: #22c55e;
+  --danger: #f87171;
+  --radius: 14px;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: var(--background);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; }
+[hidden] { display: none !important; }
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 16px 48px;
+}
+
+/* ---------- header ---------- */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.logo { display: flex; align-items: center; gap: 6px; font-size: 1.4rem; margin: 0; }
+.logo-dot { width: 18px; height: 18px; border-radius: 50%; display: inline-block; }
+.logo-dot.red { background: var(--disc-red); }
+.logo-dot.yellow { background: var(--disc-yellow); margin-right: 6px; }
+.player-badge { display: flex; align-items: center; gap: 10px; color: var(--text-muted); }
+.rating-chip {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+/* ---------- generic pieces ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  padding: 32px 24px;
+  text-align: center;
+}
+.card h2 { margin-top: 0; }
+.hint { color: var(--text-muted); font-size: 0.9rem; }
+.form-error { color: var(--danger); }
+
+button { font: inherit; cursor: pointer; }
+.primary-button, .secondary-button {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-weight: 600;
+  transition: transform 0.1s, filter 0.15s;
+}
+.primary-button { background: var(--accent); color: white; }
+.secondary-button { background: transparent; color: var(--text); border: 1px solid var(--surface-border); }
+.primary-button:hover, .secondary-button:hover { filter: brightness(1.15); }
+.primary-button:active, .secondary-button:active { transform: scale(0.97); }
+.link-button { background: none; border: none; color: var(--text-muted); text-decoration: underline; padding: 0; }
+
+.login-form { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.login-form input {
+  font: inherit;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--surface-border);
+  background: var(--background);
+  color: var(--text);
+  min-width: 220px;
+}
+.login-form input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.big-rating { font-size: 3rem; font-weight: 700; margin: 8px 0 16px; }
+.big-rating small { font-size: 1rem; color: var(--text-muted); font-weight: 400; }
+
+.spinner {
+  width: 40px; height: 40px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  border: 4px solid var(--surface-border);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- connection banner + toasts ---------- */
+.connection-banner {
+  position: sticky; top: 0; z-index: 20;
+  background: #b45309; color: white;
+  text-align: center; padding: 8px; font-weight: 600;
+}
+.toast-area {
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 8px; z-index: 30;
+}
+.toast {
+  background: var(--surface); border: 1px solid var(--surface-border);
+  padding: 10px 16px; border-radius: 10px; box-shadow: 0 6px 20px rgb(0 0 0 / 0.35);
+  animation: toast-in 0.2s ease-out;
+}
+.toast-error { border-color: var(--danger); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* ---------- queue ---------- */
+.queue-time { font-size: 2rem; font-weight: 700; margin: 0 0 20px; font-variant-numeric: tabular-nums; }
+.rating-range { margin: 0 auto 16px; max-width: 420px; }
+.rating-range-track {
+  position: relative; height: 14px; border-radius: 999px;
+  background: var(--background); border: 1px solid var(--surface-border); overflow: hidden;
+}
+.rating-range-window {
+  position: absolute; top: 0; bottom: 0;
+  background: linear-gradient(90deg, rgb(79 140 255 / 0.35), rgb(79 140 255 / 0.7), rgb(79 140 255 / 0.35));
+  transition: left 0.9s linear, width 0.9s linear;
+}
+.rating-range-you {
+  position: absolute; top: -2px; bottom: -2px; width: 3px; margin-left: -1px;
+  background: white;
+}
+.rating-range-labels {
+  display: flex; justify-content: space-between;
+  font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; font-variant-numeric: tabular-nums;
+}
+
+/* ---------- game: players + timer ---------- */
+.players-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.player-card {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 2px solid var(--surface-border);
+  border-radius: var(--radius); padding: 10px 14px; min-width: 150px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.player-card.opponent { justify-content: flex-end; text-align: right; }
+.player-card.on-turn { border-color: var(--accent); box-shadow: 0 0 0 4px rgb(79 140 255 / 0.2); }
+.player-card-name { font-weight: 700; }
+.player-card-rating { color: var(--text-muted); font-size: 0.85rem; }
+.offline-badge { color: #fbbf24; font-size: 0.75rem; }
+.turn-indicator { font-weight: 600; color: var(--text-muted); text-align: center; }
+
+.mini-disc { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; }
+
+.turn-timer { height: 6px; border-radius: 999px; background: var(--surface); overflow: hidden; }
+.turn-timer-fill { height: 100%; background: var(--accent); transition: width 0.2s linear; }
+.turn-timer-fill.urgent { background: var(--danger); }
+.turn-timer-text { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin: 6px 0 12px; min-height: 1.2em; }
+
+/* ---------- board ---------- */
+.board-wrapper { position: relative; }
+.board {
+  --cell-gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--cell-gap);
+  padding: 12px;
+  background: linear-gradient(180deg, var(--board-blue), var(--board-blue-dark));
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.4);
+  overflow: hidden;
+}
+.board-column {
+  display: flex; flex-direction: column; gap: var(--cell-gap);
+  background: transparent; border: none; padding: 4px; border-radius: 12px;
+  transition: background 0.15s;
+}
+.board-column:disabled { cursor: default; }
+.board-column:not(:disabled):hover,
+.board-column:not(:disabled):focus-visible { background: rgb(255 255 255 / 0.12); outline: none; }
+
+.cell {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--hole);
+  box-shadow: inset 0 4px 8px rgb(0 0 0 / 0.6);
+}
+.disc { position: absolute; inset: 0; border-radius: 50%; }
+.disc-red, .mini-disc.disc-red {
+  background: radial-gradient(circle at 35% 35%, #fca5a5, var(--disc-red) 45%, var(--disc-red-dark));
+}
+.disc-yellow, .mini-disc.disc-yellow {
+  background: radial-gradient(circle at 35% 35%, #fef08a, var(--disc-yellow) 45%, var(--disc-yellow-dark));
+}
+.disc.last-move { box-shadow: 0 0 0 3px rgb(255 255 255 / 0.55); }
+.disc.winning { animation: winning-pulse 0.9s ease-in-out infinite alternate; box-shadow: 0 0 0 4px white; }
+
+/* The disc falls from above the board; --fall-rows is set in board.js. */
+.disc.falling { animation: disc-fall calc(0.12s + var(--fall-rows) * 0.06s) cubic-bezier(0.45, 0, 1, 1); }
+@keyframes disc-fall {
+  from { transform: translateY(calc(var(--fall-rows) * (-100% - var(--cell-gap)) - 100%)); }
+  to { transform: translateY(0); }
+}
+@keyframes winning-pulse { to { transform: scale(0.85); } }
+
+/* ---------- game over ---------- */
+.game-over-overlay {
+  margin-top: 16px;
+  animation: toast-in 0.3s ease-out;
+}
+.game-over-card {
+  background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); padding: 24px 32px; text-align: center;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.5);
+}
+.game-over-card h2 { margin: 0 0 6px; font-size: 1.8rem; }
+.game-over-card h2[data-result="WIN"] { color: var(--success); }
+.game-over-card h2[data-result="LOSS"] { color: var(--danger); }
+.game-over-actions { display: flex; gap: 8px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+
+@media (max-width: 520px) {
+  .board { --cell-gap: 4px; padding: 8px; }
+  .board-column { padding: 2px; }
+  .player-card { min-width: 0; padding: 8px 10px; }
+  .turn-indicator { font-size: 0.85rem; }
+}

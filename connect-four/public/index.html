@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Čtyři v řadě online</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <!-- Shown whenever the WebSocket is not connected. -->
+  <div id="connection-banner" class="connection-banner" hidden></div>
+
+  <!-- Short messages (errors, info) appear here for a few seconds. -->
+  <div id="toast-area" class="toast-area" aria-live="polite"></div>
+
+  <main class="app">
+    <header class="app-header">
+      <h1 class="logo"><span class="logo-dot red"></span><span class="logo-dot yellow"></span>Čtyři v řadě</h1>
+      <div id="player-badge" class="player-badge" hidden>
+        <span id="player-badge-name"></span>
+        <span id="player-badge-rating" class="rating-chip"></span>
+        <button id="logout-button" type="button" class="link-button">Odhlásit</button>
+      </div>
+    </header>
+
+    <!-- Screen: connecting to a saved session -->
+    <section id="screen-connecting" class="screen card" hidden>
+      <div class="spinner"></div>
+      <p>Připojování k serveru…</p>
+    </section>
+
+    <!-- Screen: login -->
+    <section id="screen-login" class="screen card" hidden>
+      <h2>Zadej své jméno</h2>
+      <form id="login-form" class="login-form" novalidate>
+        <input id="login-name-input" name="name" type="text" autocomplete="nickname"
+               placeholder="např. lukas" maxlength="20" required>
+        <button type="submit" class="primary-button">Hrát</button>
+      </form>
+      <p class="hint">3–20 znaků: písmena bez diakritiky, číslice, _ a -</p>
+      <p id="login-error" class="form-error" hidden></p>
+    </section>
+
+    <!-- Screen: lobby -->
+    <section id="screen-lobby" class="screen card" hidden>
+      <h2>Ahoj, <span id="lobby-name"></span>!</h2>
+      <p class="big-rating"><span id="lobby-rating"></span> <small>ELO</small></p>
+      <p id="lobby-rating-note" class="hint" hidden></p>
+      <button id="find-opponent-button" type="button" class="primary-button">Najít soupeře</button>
+    </section>
+
+    <!-- Screen: waiting in the matchmaking queue -->
+    <section id="screen-queue" class="screen card" hidden>
+      <div class="spinner"></div>
+      <h2>Hledám soupeře…</h2>
+      <p class="queue-time"><span id="queue-waiting-seconds">0</span> s</p>
+
+      <div class="rating-range" aria-label="Rozmezí hledání soupeře">
+        <div class="rating-range-track">
+          <div id="rating-range-window" class="rating-range-window"></div>
+          <div id="rating-range-you" class="rating-range-you"></div>
+        </div>
+        <div class="rating-range-labels">
+          <span id="rating-range-min"></span>
+          <span>hledám soupeře v rozmezí</span>
+          <span id="rating-range-max"></span>
+        </div>
+      </div>
+
+      <p class="hint">Hráčů ve frontě: <span id="queue-player-count">–</span></p>
+      <button id="leave-queue-button" type="button" class="secondary-button">Zrušit</button>
+    </section>
+
+    <!-- Screen: the game itself (the game over panel appears under the board) -->
+    <section id="screen-game" class="screen" hidden>
+      <div class="players-bar">
+        <div id="you-card" class="player-card">
+          <span id="you-disc" class="mini-disc"></span>
+          <div>
+            <div class="player-card-name">Ty</div>
+            <div id="you-rating" class="player-card-rating"></div>
+          </div>
+        </div>
+        <div id="turn-indicator" class="turn-indicator"></div>
+        <div id="opponent-card" class="player-card opponent">
+          <div>
+            <div id="opponent-name" class="player-card-name"></div>
+            <div id="opponent-rating" class="player-card-rating"></div>
+            <div id="opponent-offline" class="offline-badge" hidden>odpojen – čeká se na návrat</div>
+          </div>
+          <span id="opponent-disc" class="mini-disc"></span>
+        </div>
+      </div>
+
+      <div class="turn-timer" aria-hidden="true">
+        <div id="turn-timer-fill" class="turn-timer-fill"></div>
+      </div>
+      <p id="turn-timer-text" class="turn-timer-text"></p>
+
+      <div class="board-wrapper">
+        <div id="board" class="board"></div>
+
+        <div id="game-over-overlay" class="game-over-overlay" hidden>
+          <div class="game-over-card">
+            <h2 id="game-over-title"></h2>
+            <p id="game-over-reason"></p>
+            <div class="game-over-actions">
+              <button id="play-again-button" type="button" class="primary-button">Hrát znovu</button>
+              <button id="back-to-lobby-button" type="button" class="secondary-button">Do lobby</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
