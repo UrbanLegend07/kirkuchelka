@@ -4,10 +4,17 @@
   "description": "Online Connect Four for two players over WebSocket with ELO matchmaking.",
   "type": "module",
   "scripts": {
-    "test": "node --test",
-    "dev": "node dev/mock-server.js"
+    "start": "node server/index.js",
+    "dev": "node dev/start-dev.js",
+    "mock:stats": "node dev/mock-stats-api.js",
+    "test": "node --test"
   },
   "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^4.22.3",
     "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=18.17"
   }
 }

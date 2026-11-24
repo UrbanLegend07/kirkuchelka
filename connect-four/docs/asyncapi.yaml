@@ -34,6 +34,8 @@ channels:
       matchFound: { $ref: '#/components/messages/matchFound' }
       gameState: { $ref: '#/components/messages/gameState' }
       gameOver: { $ref: '#/components/messages/gameOver' }
+      playerUpdate: { $ref: '#/components/messages/playerUpdate' }
+      notification: { $ref: '#/components/messages/notification' }
       error: { $ref: '#/components/messages/error' }
 
 operations:
@@ -58,6 +60,8 @@ operations:
       - $ref: '#/channels/game/messages/matchFound'
       - $ref: '#/channels/game/messages/gameState'
       - $ref: '#/channels/game/messages/gameOver'
+      - $ref: '#/channels/game/messages/playerUpdate'
+      - $ref: '#/channels/game/messages/notification'
       - $ref: '#/channels/game/messages/error'
 
 components:
@@ -137,6 +141,18 @@ components:
       name: game.over
       summary: The game ended; the player is IDLE again.
       payload: { $ref: '#/components/schemas/GameOverMessage' }
+    playerUpdate:
+      name: player.update
+      summary: New rating after the partner API processed a match, or after a partner webhook.
+      payload: { $ref: '#/components/schemas/PlayerUpdateMessage' }
+      examples:
+        - payload: { type: player.update, payload: { rating: 1048, ratingSource: PARTNER, ratingChange: 16 } }
+    notification:
+      name: notification
+      summary: Event from the partner stats API (rank change, new leader).
+      payload: { $ref: '#/components/schemas/NotificationMessage' }
+      examples:
+        - payload: { type: notification, payload: { kind: RANK_CHANGED, data: { oldRank: SILVER, newRank: GOLD, rating: 1205 } } }
     error:
       name: error
       summary: A request was rejected; the connection stays open.
@@ -277,6 +293,35 @@ components:
               type: array
               items: { $ref: '#/components/schemas/Cell' }
             board: { $ref: '#/components/schemas/Board' }
+
+    PlayerUpdateMessage:
+      type: object
+      required: [type, payload]
+      properties:
+        type: { const: player.update }
+        payload:
+          type: object
+          required: [rating, ratingSource, ratingChange]
+          properties:
+            rating: { type: integer }
+            ratingSource: { type: string, enum: [PARTNER, CACHE, DEFAULT] }
+            ratingChange: { type: [integer, 'null'] }
+
+    NotificationMessage:
+      type: object
+      required: [type, payload]
+      properties:
+        type: { const: notification }
+        payload:
+          type: object
+          required: [kind, data]
+          properties:
+            kind: { type: string, enum: [RANK_CHANGED, NEW_LEADER] }
+            data:
+              type: object
+              description: |
+                RANK_CHANGED: { oldRank, newRank, rating }
+                NEW_LEADER: { playerId, rating }
 
     ErrorMessage:
       type: object

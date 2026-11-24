@@ -226,6 +226,27 @@ The game ended. The player is back in state `IDLE`.
 | `winnerId` | `null` on a draw |
 | `winningCells` | empty unless `reason` is `FOUR_IN_A_ROW` |
 
+### `player.update`
+The player's rating changed: after the partner API processed a finished match, or after a partner webhook.
+```json
+{ "type": "player.update", "payload": { "rating": 1048, "ratingSource": "PARTNER", "ratingChange": 16 } }
+```
+| field | meaning |
+|---|---|
+| `ratingChange` | difference to the previous rating, `null` when unknown (e.g. after a webhook) |
+
+A finished match is sent to the partner API in the background, so `player.update` arrives a moment **after** `game.over`
+(or minutes later, when the partner is down and the result waits in the outbox — see [partner-api.md](./partner-api.md)).
+Matches against the development bot do not change the rating.
+
+### `notification`
+An event from the partner stats API, forwarded to the player. The frontend chooses the text.
+```json
+{ "type": "notification", "payload": { "kind": "RANK_CHANGED", "data": { "oldRank": "SILVER", "newRank": "GOLD", "rating": 1205 } } }
+{ "type": "notification", "payload": { "kind": "NEW_LEADER", "data": { "playerId": "lukas", "rating": 1460 } } }
+```
+`RANK_CHANGED` goes only to the player concerned, `NEW_LEADER` to every online player.
+
 ### `error`
 A request was rejected. The connection stays open.
 ```json
@@ -340,5 +361,4 @@ room.gameState = moveResult.state;
 2. `playerId` = name (simple, matches `"playerA": "richard"` in `POST /matches`). Is that fine for the partner API?
 3. `ratingSource` in `auth.ok` — lets the frontend show "rating may be outdated" when the partner is down.
 4. Random first player + swapped colors in a rematch.
-5. Optional `newRating` in `game.over` (after the partner recalculated ELO) — the frontend could show
-   the change right away. Without it the new rating appears with the next `queue.status` / `auth.ok`.
+5. ~~Optional `newRating` in `game.over`~~ → solved by the separate `player.update` message (the partner answers after `game.over` is sent).

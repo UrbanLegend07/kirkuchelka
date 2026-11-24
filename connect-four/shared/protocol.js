@@ -33,7 +33,15 @@ export const ServerMessageType = Object.freeze({
   MATCH_FOUND: 'match.found',
   GAME_STATE: 'game.state',
   GAME_OVER: 'game.over',
+  PLAYER_UPDATE: 'player.update',
+  NOTIFICATION: 'notification',
   ERROR: 'error',
+});
+
+/** Kinds of the `notification` message (events forwarded from the partner stats API). */
+export const NotificationKind = Object.freeze({
+  RANK_CHANGED: 'RANK_CHANGED',
+  NEW_LEADER: 'NEW_LEADER',
 });
 
 /**

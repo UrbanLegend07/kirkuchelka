@@ -128,6 +128,18 @@ function handleServerMessage(type, payload) {
       handleServerError(payload);
       break;
 
+    // New rating after a match or after a partner webhook.
+    case ServerMessageType.PLAYER_UPDATE:
+      if (appState.player) {
+        appState.player = { ...appState.player, rating: payload.rating, ratingSource: payload.ratingSource };
+      }
+      break;
+
+    // Events from the partner stats API (RANK_CHANGED, NEW_LEADER). TODO Lukáš: show them as a toast.
+    case ServerMessageType.NOTIFICATION:
+      console.info('Notification:', payload.kind, payload.data);
+      break;
+
     default:
       console.warn('Unknown message from server:', type, payload);
   }
